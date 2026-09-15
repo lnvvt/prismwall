@@ -78,22 +78,23 @@ NSAttributedString(string: "完全本地 · 零网络权限 · 开源免费", at
     .paragraphStyle: para
 ]).draw(in: NSRect(x: 0, y: H-420, width: W, height: 60))
 
-// 拖拽箭头（上拱弧线，指向 Applications）
-let ink = NSColor(calibratedWhite: 29/255, alpha: 0.8)
+// 拖拽箭头（按 ZCode 标准样式：上拱浅弧、弧顶略高于图标中心线、箭头微微下压）
+// 图标中心线 = 画布 y 280（@2x 底原点）；箭头尾部 264、弧顶 ~327、尖端 270，横向 295-425pt 居中
+let ink = NSColor.black.withAlphaComponent(0.62)
 ink.setStroke()
 let arrow = NSBezierPath()
-arrow.lineWidth = 13
+arrow.lineWidth = 15
 arrow.lineCapStyle = .round
-arrow.move(to: NSPoint(x: 590, y: 295))
-arrow.curve(to: NSPoint(x: 850, y: 282),
-            controlPoint1: NSPoint(x: 672, y: 392),
-            controlPoint2: NSPoint(x: 768, y: 388))
+arrow.move(to: NSPoint(x: 590, y: 264))
+arrow.curve(to: NSPoint(x: 850, y: 270),
+            controlPoint1: NSPoint(x: 700, y: 365),
+            controlPoint2: NSPoint(x: 790, y: 330))
 arrow.stroke()
 let head = NSBezierPath()
-head.lineWidth = 13; head.lineCapStyle = .round
-head.move(to: NSPoint(x: 838, y: 352))
-head.line(to: NSPoint(x: 850, y: 282))
-head.line(to: NSPoint(x: 793, y: 311))
+head.lineWidth = 15; head.lineCapStyle = .round
+head.move(to: NSPoint(x: 835, y: 328))
+head.line(to: NSPoint(x: 850, y: 270))
+head.line(to: NSPoint(x: 795, y: 240))
 head.stroke()
 
 // 底部脚注（首次打开放行提示；其余安装说明见 Release 正文）
