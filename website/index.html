@@ -61,6 +61,13 @@
     transition: transform .15s ease;
   }
   .cta:hover { transform: translateY(-2px); }
+  .cta-row { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: wrap; }
+  .cta-ghost {
+    display: inline-flex; align-items: center; gap: 9px;
+    background: rgba(255,255,255,.06); color: #f2f2f4;
+    border: 1px solid rgba(255,255,255,.28); padding: 14px 34px;
+  }
+  .cta-ghost:hover { border-color: rgba(255,255,255,.55); }
   .cta-note { display: block; margin-top: 12px; color: #6b6b75; font-size: 13px; }
 
   /* ---- 真实 App 截图 ---- */
@@ -173,7 +180,13 @@
   <div class="spectrum-line"></div>
   <p class="sub">完全本地运行的 macOS 媒体管理软件。<b>零网络权限</b>,沉浸式媒体墙,
      多视频同屏对照——为摄影师、创作者和所有在意隐私的人打造。</p>
-  <a class="cta" href="https://github.com/lnvvt/prismwall/releases/latest">下载 v1.0.0</a>
+  <div class="cta-row">
+    <a class="cta cta-ghost" href="https://github.com/lnvvt/prismwall" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+    <a class="cta" href="https://github.com/lnvvt/prismwall/releases/latest">下载 v1.0.0</a>
+  </div>
   <span class="cta-note">macOS 14+ · Apple Silicon · 免费</span>
 
   <div class="stage-wrap reveal">
@@ -234,11 +247,13 @@
   <div class="ghost">04</div>
   <div class="wrap">
     <h2 class="reveal">两步安装。</h2>
-    <p class="sec-sub reveal">打开 DMG,把 PrismWall.app 拖入「应用程序」,首次打开多一次「仍要打开」的确认。</p>
-    <p class="cmd-label reveal">拖入「应用程序」文件夹后,在终端执行:</p>
+    <p class="sec-sub reveal">第一步:打开 DMG,把 PrismWall.app 拖入「应用程序」。
+       第二步:首次打开时放行一次——下面两种方式<b>任选其一</b>即可。</p>
+    <p class="cmd-label reveal">方式一(无需命令):打开 App,按提示前往 系统设置 → 隐私与安全性 → 点「仍要打开」</p>
+    <p class="cmd-label reveal" style="margin-top:22px">方式二:或在终端执行:</p>
     <code class="cmd reveal">xattr -cr /Applications/PrismWall.app</code>
     <p class="steps-note reveal">为什么会被拦截?PrismWall 尚未经过 Apple 公证(需要付费开发者账号)。
-       不想用命令的话:系统设置 → 隐私与安全性 → 仍要打开(仅首次需要)。</p>
+       放行仅首次需要,之后正常打开。</p>
   </div>
 </section>
 
