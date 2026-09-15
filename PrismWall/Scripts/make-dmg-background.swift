@@ -78,21 +78,22 @@ NSAttributedString(string: "完全本地 · 零网络权限 · 开源免费", at
     .paragraphStyle: para
 ]).draw(in: NSRect(x: 0, y: H-420, width: W, height: 60))
 
-// 拖拽箭头（ZCode 样式：粗线、深色、大箭头头，但拉直为水平直线）
-// 图标中心线 = 画布 y 280（@2x 底原点），箭头 310-410pt 居中于两图标之间
+// 拖拽箭头（ZCode 样式：粗线、深色、大箭头头，水平直线）
+// 图标中心在窗口 y 300（含 28pt 标题栏）→ 画布坐标 272 → @2x 底原点 y = 880-544 = 336
+// 箭头横向 310-410pt 居中于两图标之间，纵向与图标中心线对齐
 let ink = NSColor.black.withAlphaComponent(0.8)
 ink.setStroke()
 let arrow = NSBezierPath()
 arrow.lineWidth = 15
 arrow.lineCapStyle = .round
-arrow.move(to: NSPoint(x: 620, y: 280))
-arrow.line(to: NSPoint(x: 820, y: 280))
+arrow.move(to: NSPoint(x: 620, y: 336))
+arrow.line(to: NSPoint(x: 820, y: 336))
 arrow.stroke()
 let head = NSBezierPath()
 head.lineWidth = 15; head.lineCapStyle = .round
-head.move(to: NSPoint(x: 785, y: 315))
-head.line(to: NSPoint(x: 820, y: 280))
-head.line(to: NSPoint(x: 785, y: 245))
+head.move(to: NSPoint(x: 785, y: 371))
+head.line(to: NSPoint(x: 820, y: 336))
+head.line(to: NSPoint(x: 785, y: 301))
 head.stroke()
 
 // 底部脚注（首次打开放行提示；其余安装说明见 Release 正文）
