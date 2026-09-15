@@ -1,0 +1,23 @@
+# 构建产物
+.build/
+*.xcodeproj
+DerivedData/
+
+Scripts/privacy-words.txt
+
+# 系统文件
+.DS_Store
+/tmp/
+*.log
+
+# 本地文件
+交接文档.md
+design-previews/
+*.dmg
+
+# 内部文档与过程稿
+PRD-v1.md
+技术选型与架构-v1.md
+marketing/
+icon-concepts.html
+icon-concepts-light.html

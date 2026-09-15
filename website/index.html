@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PrismWall — 你的照片视频,只属于你</title>
+<meta name="description" content="完全本地运行的 macOS 照片视频管理软件。零网络权限,沉浸式媒体墙,多视频同屏对照。为摄影师、创作者和所有在意隐私的人打造。">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    background: #0a0a0e; color: #f2f2f4;
+    font-family: -apple-system, "SF Pro Display", "PingFang SC", sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.65;
+    overflow-x: hidden;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 28px; }
+  .grad {
+    background: linear-gradient(90deg, #ff453a, #ffd60a, #30d158, #0a84ff, #bf5af2);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  /* ---- 导航 ---- */
+  nav { position: fixed; inset: 0 0 auto 0; z-index: 50; height: 58px;
+    background: rgba(10,10,14,.55);
+    -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: .5px solid rgba(255,255,255,.08);
+  }
+  nav .wrap { height: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-weight: 700; font-size: 17px; color: #fff; text-decoration: none; }
+  .nav-r { display: flex; gap: 26px; align-items: center; }
+  .nav-r a { color: #9a9aa4; text-decoration: none; font-size: 13.5px; }
+  .nav-r a:hover { color: #fff; }
+  .nav-cta { color: #fff !important; font-weight: 600; padding: 6px 16px;
+    border-radius: 999px; background: rgba(255,255,255,.12);
+    border: .5px solid rgba(255,255,255,.2); font-size: 13px !important; }
+  .nav-cta:hover { background: rgba(255,255,255,.2); }
+
+  /* ---- Hero ---- */
+  .hero { position: relative; padding: 160px 0 0; text-align: center; }
+  .glow { position: absolute; border-radius: 50%; filter: blur(110px); pointer-events: none; }
+  .g1 { width: 640px; height: 420px; left: 50%; top: -80px; transform: translateX(-50%);
+        background: rgba(120,120,255,.17); }
+  .g2 { width: 380px; height: 300px; left: 4%; top: 180px; background: rgba(255,69,58,.10); }
+  .g3 { width: 380px; height: 300px; right: 4%; top: 150px; background: rgba(10,132,255,.12); }
+  .eyebrow { font-size: 14px; font-weight: 600; letter-spacing: .12em; color: #9a9aa4; margin-bottom: 18px; }
+  h1 { position: relative; font-size: clamp(42px, 6.2vw, 76px); font-weight: 800;
+       letter-spacing: -.022em; line-height: 1.1; }
+  .spectrum-line {
+    width: 150px; height: 3.5px; border-radius: 2px; margin: 34px auto 0;
+    background: linear-gradient(90deg, #ff453a, #ffd60a, #30d158, #0a84ff, #bf5af2);
+  }
+  .hero .sub { position: relative; color: #9a9aa4; font-size: clamp(16px,1.8vw,19px);
+       max-width: 640px; margin: 26px auto 0; }
+  .hero .sub b { color: #f2f2f4; }
+  .cta {
+    position: relative; display: inline-block; margin-top: 34px;
+    background: #f2f2f4; color: #0a0a0e;
+    text-decoration: none; font-weight: 700; font-size: 16.5px;
+    padding: 15px 44px; border-radius: 999px;
+    transition: transform .15s ease;
+  }
+  .cta:hover { transform: translateY(-2px); }
+  .cta-note { display: block; margin-top: 12px; color: #6b6b75; font-size: 13px; }
+
+  /* ---- 真实 App 截图 ---- */
+  .stage-wrap { position: relative; max-width: 980px; margin: 72px auto 0; padding: 0 28px; }
+  .win-glow {
+    position: absolute; inset: 6% 3%; z-index: 0; border-radius: 48px; filter: blur(75px); opacity: .45;
+    background: linear-gradient(120deg, rgba(255,69,58,.5), rgba(255,214,10,.3),
+                rgba(48,209,88,.4), rgba(10,132,255,.55), rgba(191,90,242,.5));
+  }
+  .shot { position: relative; z-index: 1; display: block; width: 100%; height: auto;
+    border-radius: 12px; border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 40px 110px rgba(0,0,0,.65); }
+
+  /* ---- Apple 式逐屏叙事 ---- */
+  .story { position: relative; padding: 130px 0 110px; }
+  .story + .story { border-top: .5px solid rgba(255,255,255,.07); }
+  .ghost {
+    position: absolute; top: 28px; left: -10px; z-index: 0;
+    font-size: clamp(110px, 18vw, 210px); font-weight: 800; letter-spacing: -.05em;
+    color: rgba(255,255,255,.05); line-height: 1; user-select: none;
+  }
+  .story h2 { position: relative; z-index: 1; text-align: center;
+    font-size: clamp(34px, 4.6vw, 56px); font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+  .story .sec-sub { text-align: center; color: #9a9aa4; font-size: clamp(15.5px,1.7vw,18px);
+    max-width: 640px; margin: 18px auto 0; position: relative; z-index: 1; }
+  .sec-media { margin-top: 54px; position: relative; z-index: 1; }
+  .sec-media .shot { box-shadow: 0 30px 90px rgba(0,0,0,.55); }
+
+  .keys { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px 24px; margin-top: 34px;
+    color: #9a9aa4; font-size: 13.5px; }
+  kbd { font-family: "SF Mono", Menlo, monospace; font-size: 12.5px; color: #e8e8ee;
+    background: #1b1b22; border: 1px solid #2e2e38; border-bottom-width: 3px;
+    border-radius: 7px; padding: 4px 10px; margin-right: 6px; }
+
+  /* 隐私 */
+  .privacy {
+    max-width: 820px; margin: 50px auto 0; border-radius: 22px; padding: 38px 42px;
+    background: linear-gradient(180deg, rgba(48,209,88,.06), rgba(48,209,88,.012));
+    border: 1px solid rgba(48,209,88,.25);
+  }
+  .privacy table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .privacy td { padding: 13px 0; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .privacy tr:last-child td { border-bottom: none; }
+  .privacy td:first-child { width: 46%; font-weight: 600; }
+  .privacy td:last-child { color: #9a9aa4; }
+  .ok { color: #30d158; margin-right: 10px; }
+  .verify { text-align: center; margin-top: 26px; color: #6b6b75; font-size: 13px; }
+  .verify code { font-family: "SF Mono", Menlo, monospace; background: #16161d; color: #d8d8e0;
+    padding: 3px 10px; border-radius: 6px; font-size: 12.5px; }
+
+  /* 安装 */
+  .cmd-label { text-align: center; color: #9a9aa4; font-size: 14px; margin: 34px 0 0; }
+  .cmd {
+    display: block; max-width: 680px; margin: 12px auto 0; text-align: center;
+    font-family: "SF Mono", Menlo, monospace; font-size: 14.5px; color: #e8e8ee;
+    background: #14141a; border: 1px solid rgba(255,255,255,.09);
+    border-radius: 12px; padding: 15px 20px;
+    white-space: nowrap;
+    -webkit-user-select: all; user-select: all; cursor: text;
+  }
+  .steps-note { text-align: center; color: #9a9aa4; font-size: 14px; max-width: 640px; margin: 18px auto 0; }
+
+  /* FAQ */
+  .faq { max-width: 780px; margin: 44px auto 0; }
+  details { background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; padding: 16px 20px; margin-top: 12px; }
+  summary { cursor: pointer; font-weight: 600; font-size: 15.5px; }
+  details p { color: #9a9aa4; margin-top: 10px; font-size: 14px; }
+
+  /* 结尾 CTA */
+  .ending { text-align: center; padding: 130px 0 110px; border-top: .5px solid rgba(255,255,255,.07); }
+  .ending h2 { font-size: clamp(34px, 4.8vw, 58px); font-weight: 800; letter-spacing: -.02em; }
+
+  footer { border-top: 1px solid rgba(255,255,255,.07); text-align: center;
+    color: #6b6b75; font-size: 13px; padding: 36px 0 46px; }
+  footer a { color: #9a9aa4; }
+
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { transition: none; opacity: 1; transform: none; } }
+  @media (max-width: 720px) {
+    .ghost { opacity: .5; }
+    .privacy { padding: 26px 22px; }
+    .privacy td:first-child { width: 52%; }
+  }
+  @media (max-width: 480px) {
+    .cmd { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="#">PrismWall</a>
+    <div class="nav-r">
+      <a href="#story-1">功能</a>
+      <a href="#privacy">隐私</a>
+      <a href="#install">安装</a>
+      <a href="https://github.com/lnvvt/prismwall">GitHub</a>
+      <a class="nav-cta" href="https://github.com/lnvvt/prismwall/releases/latest">下载</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div>
+  <div class="eyebrow">PRISMWALL FOR MAC · V1.0.0 开源免费</div>
+  <h1>你的照片视频,<br><span class="grad">只属于你。</span></h1>
+  <div class="spectrum-line"></div>
+  <p class="sub">完全本地运行的 macOS 媒体管理软件。<b>零网络权限</b>,沉浸式媒体墙,
+     多视频同屏对照——为摄影师、创作者和所有在意隐私的人打造。</p>
+  <a class="cta" href="https://github.com/lnvvt/prismwall/releases/latest">下载 v1.0.0</a>
+  <span class="cta-note">macOS 14+ · Apple Silicon · 免费</span>
+
+  <div class="stage-wrap reveal">
+    <div class="win-glow"></div>
+    <img class="shot" src="img/wall-time.jpg" width="2560" height="1280"
+         alt="PrismWall 媒体墙:按时间分组的照片视频缩略墙,深色界面">
+  </div>
+</header>
+
+<section class="story" id="story-1">
+  <div class="ghost">01</div>
+  <div class="wrap">
+    <h2 class="reveal">一目了然。</h2>
+    <p class="sec-sub reveal">十万张照片视频,铺成一面粉彩墙。缩略图流畅滚动,点击放大看 EXIF,
+       按时间或按文件夹,全凭你心情。</p>
+    <div class="sec-media reveal">
+      <img class="shot" src="img/wall-folder.jpg" width="2560" height="1280" loading="lazy" decoding="async"
+           alt="PrismWall 按文件夹分组视图:保留原有文件夹组织方式">
+    </div>
+  </div>
+</section>
+
+<section class="story" id="story-2">
+  <div class="ghost">02</div>
+  <div class="wrap">
+    <h2 class="reveal">九路同屏,<br>一个节拍。</h2>
+    <p class="sec-sub reveal">多视频舞台同步播放,偏差小于 5 毫秒,声音跟随焦点。
+       ⌘ 多选即进舞台,Tab 切焦点,G 键换布局。</p>
+    <div class="sec-media reveal">
+      <img class="shot" src="img/stage.jpg" width="2560" height="1280" loading="lazy" decoding="async"
+           alt="PrismWall 多视频舞台:九路视频 3×3 同步播放,带主时间轴与快捷键提示">
+      <div class="keys reveal">
+        <span><kbd>␣</kbd>播放</span><span><kbd>F</kbd>收藏</span>
+        <span><kbd>⌘</kbd>多选</span><span><kbd>Tab</kbd>焦点</span><span><kbd>G</kbd>布局</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="story" id="privacy">
+  <div class="ghost">03</div>
+  <div class="wrap">
+    <h2 class="reveal">隐私是架构,<br>不是口号。</h2>
+    <p class="sec-sub reveal">不申请任何网络权限——系统不允许它联网,这不是承诺,是技术事实。</p>
+    <div class="privacy reveal">
+      <table>
+        <tr><td><span class="ok">✓</span>不申请任何网络权限</td><td>用系统命令即可公开验证</td></tr>
+        <tr><td><span class="ok">✓</span>数据全部留在本机</td><td>索引与缓存仅存于你的用户目录</td></tr>
+        <tr><td><span class="ok">✓</span>移除来源不删文件</td><td>磁盘上的原始文件零改动</td></tr>
+        <tr><td><span class="ok">✓</span>发布包自动隐私审计</td><td>6 项检查:文件白名单 / 敏感字符串 / 零网络等</td></tr>
+      </table>
+    </div>
+    <p class="verify reveal">安装后可自行验证:<code>codesign -d --entitlements /Applications/PrismWall.app</code></p>
+  </div>
+</section>
+
+<section class="story" id="install">
+  <div class="ghost">04</div>
+  <div class="wrap">
+    <h2 class="reveal">两步安装。</h2>
+    <p class="sec-sub reveal">打开 DMG,把 PrismWall.app 拖入「应用程序」,首次打开多一次「仍要打开」的确认。</p>
+    <p class="cmd-label reveal">拖入「应用程序」文件夹后,在终端执行:</p>
+    <code class="cmd reveal">xattr -cr /Applications/PrismWall.app</code>
+    <p class="steps-note reveal">为什么会被拦截?PrismWall 尚未经过 Apple 公证(需要付费开发者账号)。
+       不想用命令的话:系统设置 → 隐私与安全性 → 仍要打开(仅首次需要)。</p>
+  </div>
+</section>
+
+<section class="story" id="faq">
+  <div class="ghost">05</div>
+  <div class="wrap">
+    <h2 class="reveal">常见问题。</h2>
+    <div class="faq">
+      <details class="reveal">
+        <summary>和苹果「照片」App 有什么区别?</summary>
+        <p>照片 App 管理它自己的图库;PrismWall 管理你硬盘上任意文件夹里的照片视频,保留你的文件夹组织方式,并提供照片 App 没有的多视频同屏对照能力。</p>
+      </details>
+      <details class="reveal">
+        <summary>免费吗?以后呢?</summary>
+        <p>完全开源、完全免费(MIT 协议),源码公开可审计。没有付费墙,也没有广告。</p>
+      </details>
+      <details class="reveal">
+        <summary>支持哪些格式?</summary>
+        <p>照片:JPEG / PNG / HEIC / WebP / TIFF 等;视频:MP4 / MOV / M4V 等(H.264 / HEVC)。</p>
+      </details>
+      <details class="reveal">
+        <summary>会偷传我的照片吗?</summary>
+        <p>技术上不可能:App 不存在任何网络权限,系统不允许它发起网络连接。欢迎用 Little Snitch 等工具监控验证。</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="ending">
+  <div class="wrap">
+    <h2 class="reveal">现在,把你的照片墙<br>挂起来。</h2>
+    <div class="spectrum-line reveal" style="margin:30px auto 34px;"></div>
+    <a class="cta reveal" href="https://github.com/lnvvt/prismwall/releases/latest">下载 v1.0.0</a>
+  </div>
+</section>
+
+<footer>
+  PrismWall · 用 Swift 构建于 macOS ·
+  <a href="https://github.com/lnvvt/prismwall">GitHub</a> ·
+  <a href="https://github.com/lnvvt/prismwall/issues">反馈问题</a>
+</footer>
+
+<script>
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }), { threshold: .12 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+</body>
+</html>
