@@ -424,7 +424,8 @@ final class LightboxContentView: NSView {
     private let infoBox = NSView()
     private let titleLabel = NSTextField(labelWithString: "")
     private let metaLabel = NSTextField(labelWithString: "")
-    private let hintBar = NSTextField(labelWithString: "")
+    private let hintBar = NSView()
+    private let hintLabel = NSTextField(labelWithString: "")
     private let closeButton: NSButton = {
         let button = NSButton(image: NSImage(
             systemSymbolName: "xmark", accessibilityDescription: "关闭") ?? NSImage(),
@@ -487,13 +488,15 @@ final class LightboxContentView: NSView {
         infoBox.addSubview(titleLabel)
         infoBox.addSubview(metaLabel)
 
-        hintBar.font = .systemFont(ofSize: 13, weight: .medium)
-        hintBar.textColor = .white
+        // 胶囊底板 + 居中文字（NSTextField 文字默认顶对齐，直接固定标签高度会让文字贴上边框）
         hintBar.wantsLayer = true
         hintBar.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.72).cgColor
-        hintBar.layer?.cornerRadius = 10
+        hintBar.layer?.cornerRadius = 15
         hintBar.layer?.borderWidth = 1
         hintBar.layer?.borderColor = NSColor.white.withAlphaComponent(0.18).cgColor
+        hintBar.alphaValue = 0
+        hintLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        hintLabel.textColor = .white
 
         closeButton.target = self
         closeButton.action = #selector(closeClicked)
@@ -503,6 +506,8 @@ final class LightboxContentView: NSView {
             subview.translatesAutoresizingMaskIntoConstraints = false
             addSubview(subview)
         }
+        hintLabel.translatesAutoresizingMaskIntoConstraints = false
+        hintBar.addSubview(hintLabel)
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: infoBox.topAnchor, constant: 8),
             titleLabel.leadingAnchor.constraint(equalTo: infoBox.leadingAnchor, constant: 12),
@@ -519,6 +524,9 @@ final class LightboxContentView: NSView {
             hintBar.centerXAnchor.constraint(equalTo: centerXAnchor),
             hintBar.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
             hintBar.heightAnchor.constraint(equalToConstant: 30),
+            hintLabel.centerYAnchor.constraint(equalTo: hintBar.centerYAnchor),
+            hintBar.leadingAnchor.constraint(equalTo: hintLabel.leadingAnchor, constant: -14),
+            hintBar.trailingAnchor.constraint(equalTo: hintLabel.trailingAnchor, constant: 14),
 
             closeButton.widthAnchor.constraint(equalToConstant: 24),
             closeButton.heightAnchor.constraint(equalToConstant: 24),
@@ -601,7 +609,7 @@ final class LightboxContentView: NSView {
 
     /// 反馈提示（已收藏/已截帧等），2.5 秒后自动淡出
     func showHint(text: String) {
-        hintBar.stringValue = text
+        hintLabel.stringValue = text
         hintBar.alphaValue = 1
         hintHideTask?.cancel()
         hintHideTask = Task { [weak hintBar] in
@@ -1091,22 +1099,31 @@ final class ShortcutCardView: NSVisualEffectView {
         stack.setCustomSpacing(12, after: title)
 
         for (key, action) in rows {
+            // 键帽底板 + 居中文字（同提示条：文字直接固定高度会顶到上边框）
+            let keyBadge = NSView()
+            keyBadge.wantsLayer = true
+            keyBadge.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.14).cgColor
+            keyBadge.layer?.cornerRadius = 5
+            keyBadge.translatesAutoresizingMaskIntoConstraints = false
+
             let keyLabel = NSTextField(labelWithString: key)
             keyLabel.font = .monospacedDigitSystemFont(ofSize: 11, weight: .semibold)
             keyLabel.textColor = .white
-            keyLabel.wantsLayer = true
-            keyLabel.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.14).cgColor
-            keyLabel.layer?.cornerRadius = 5
-            keyLabel.translatesAutoresizingMaskIntoConstraints = false
-            keyLabel.widthAnchor.constraint(equalToConstant: 42).isActive = true
-            keyLabel.heightAnchor.constraint(equalToConstant: 18).isActive = true
             keyLabel.alignment = .center
+            keyLabel.translatesAutoresizingMaskIntoConstraints = false
+            keyBadge.addSubview(keyLabel)
+            NSLayoutConstraint.activate([
+                keyLabel.centerXAnchor.constraint(equalTo: keyBadge.centerXAnchor),
+                keyLabel.centerYAnchor.constraint(equalTo: keyBadge.centerYAnchor),
+                keyBadge.widthAnchor.constraint(equalToConstant: 42),
+                keyBadge.heightAnchor.constraint(equalToConstant: 18),
+            ])
 
             let actionLabel = NSTextField(labelWithString: action)
             actionLabel.font = .systemFont(ofSize: 12)
             actionLabel.textColor = .labelColor
 
-            let row = NSStackView(views: [keyLabel, actionLabel])
+            let row = NSStackView(views: [keyBadge, actionLabel])
             row.orientation = .horizontal
             row.spacing = 10
             row.translatesAutoresizingMaskIntoConstraints = false
