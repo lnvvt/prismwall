@@ -800,6 +800,16 @@ final class VideoPlayerView: NSView {
     var onPlaybackProgress: ((Int64, Double) -> Void)?
     nonisolated(unsafe) private var endObserver: NSObjectProtocol?
 
+    // 播放控制条状态：倍速档位跨会话记忆，[ ] 快捷键与菜单共用同一档位表
+    private var desiredSpeed: Float = 1.0
+    private let speedRates: [(label: String, rate: Float)] = [
+        ("3.0x", 3), ("2.0x", 2), ("1.5x", 1.5), ("1.25x", 1.25), ("1.0x", 1), ("0.75x", 0.75)
+    ]
+    private var speedMenu = NSMenu()
+    private var playPauseButton: NSButton?
+    private var speedButton: NSButton?
+    private var lastIconShowsPause = false
+
     init(
         frame frameRect: NSRect, item: WallItem,
         progressProvider: ((Int64) -> Double?)? = nil,
@@ -843,6 +853,13 @@ final class VideoPlayerView: NSView {
             timeLabel.centerYAnchor.constraint(equalTo: slider.centerYAnchor),
         ])
 
+        // 播放速度记忆（跨会话）
+        if let saved = UserDefaults.standard.object(forKey: "viewerPlaybackSpeed") as? Float,
+           speedRates.contains(where: { abs($0.rate - saved) < 0.001 }) {
+            desiredSpeed = saved
+        }
+        buildTransportBar()
+
         Task { [weak self] in
             let asset = AVURLAsset(url: item.fileURL)
             if let duration = try? await asset.load(.duration) {
@@ -877,13 +894,15 @@ final class VideoPlayerView: NSView {
             MainActor.assumeIsolated {
                 self?.player.seek(to: .zero)
                 self?.player.play()
-                if let id = self?.mediaItem.id {
-                    self?.onPlaybackProgress?(id, 0) // 播完重置进度
+                if let self, self.desiredSpeed != 1.0 { self.player.rate = self.desiredSpeed }
+                if let self {
+                    self.onPlaybackProgress?(self.mediaItem.id, 0) // 播完重置进度
                 }
             }
         }
 
         player.play()
+        if desiredSpeed != 1.0 { player.rate = desiredSpeed }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -903,6 +922,7 @@ final class VideoPlayerView: NSView {
     }
 
     private func syncUI(time: Double) {
+        syncPlayPauseIcon()
         guard !isScrubbing else { return }
         slider.doubleValue = time
         timeLabel.stringValue = "\(Self.format(time)) / \(Self.format(duration))"
@@ -932,7 +952,9 @@ final class VideoPlayerView: NSView {
             onPlaybackProgress?(mediaItem.id, player.currentTime().seconds)
         } else {
             player.play()
+            if desiredSpeed != 1.0 { player.rate = desiredSpeed }
         }
+        syncPlayPauseIcon()
     }
 
     func pause() {
@@ -958,7 +980,141 @@ final class VideoPlayerView: NSView {
     }
 
     func changeRate(by delta: Double) {
-        player.rate = max(0.25, min(4, player.rate + Float(delta)))
+        // [ ] 变速快捷键与倍速菜单共用同一档位表，逐档步进
+        let ascending = speedRates.reversed()
+        guard let idx = ascending.firstIndex(where: { abs($0.rate - desiredSpeed) < 0.001 }) else { return }
+        let next = ascending.index(idx, offsetBy: delta > 0 ? 1 : -1)
+        guard ascending.indices.contains(next) else { return }
+        desiredSpeed = ascending[next].rate
+        applySpeed()
+    }
+
+    // MARK: 播放控制条（胶囊浮层，随播放视图居中）
+
+    private func buildTransportBar() {
+        let capsule = NSView()
+        capsule.wantsLayer = true
+        capsule.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.58).cgColor
+        capsule.layer?.cornerRadius = 27
+        capsule.layer?.borderWidth = 1
+        capsule.layer?.borderColor = NSColor.white.withAlphaComponent(0.16).cgColor
+        capsule.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(capsule)
+
+        func symbolButton(_ name: String, accessibility: String, action: Selector) -> NSButton {
+            let base = NSImage(systemSymbolName: name, accessibilityDescription: nil) ?? NSImage()
+            let image = base.withSymbolConfiguration(.init(pointSize: 22, weight: .semibold)) ?? base
+            let button = NSButton(image: image, target: self, action: action)
+            button.isBordered = false
+            button.imageScaling = .scaleProportionallyDown
+            button.contentTintColor = .white
+            button.setAccessibilityLabel(accessibility)
+            button.translatesAutoresizingMaskIntoConstraints = false
+            return button
+        }
+
+        let back5 = symbolButton("gobackward.5", accessibility: "后退 5 秒", action: #selector(seekBack5))
+        let fwd5 = symbolButton("goforward.5", accessibility: "前进 5 秒", action: #selector(seekForward5))
+        let playButton = symbolButton("pause.fill", accessibility: "播放 / 暂停", action: #selector(playPauseClicked))
+        playPauseButton = playButton
+
+        let speed = NSButton(title: "", target: self, action: #selector(showSpeedMenu))
+        speed.isBordered = false
+        speed.setAccessibilityLabel("播放速度")
+        speed.translatesAutoresizingMaskIntoConstraints = false
+        speedButton = speed
+
+        for view in [back5, playButton, fwd5, speed] { capsule.addSubview(view) }
+        NSLayoutConstraint.activate([
+            capsule.centerXAnchor.constraint(equalTo: centerXAnchor),
+            capsule.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -37),
+            capsule.heightAnchor.constraint(equalToConstant: 54),
+
+            back5.leadingAnchor.constraint(equalTo: capsule.leadingAnchor, constant: 24),
+            back5.widthAnchor.constraint(equalToConstant: 26),
+            playButton.leadingAnchor.constraint(equalTo: back5.trailingAnchor, constant: 26),
+            playButton.widthAnchor.constraint(equalToConstant: 26),
+            fwd5.leadingAnchor.constraint(equalTo: playButton.trailingAnchor, constant: 26),
+            fwd5.widthAnchor.constraint(equalToConstant: 26),
+            speed.leadingAnchor.constraint(equalTo: fwd5.trailingAnchor, constant: 30),
+            speed.widthAnchor.constraint(greaterThanOrEqualToConstant: 34),
+            speed.trailingAnchor.constraint(equalTo: capsule.trailingAnchor, constant: -24),
+        ])
+        for view in [back5, playButton, fwd5, speed] {
+            NSLayoutConstraint.activate([
+                view.centerYAnchor.constraint(equalTo: capsule.centerYAnchor),
+                view.heightAnchor.constraint(equalToConstant: 34),
+            ])
+        }
+        buildSpeedMenu()
+    }
+
+    private func syncPlayPauseIcon() {
+        guard let playPauseButton else { return }
+        let playing = player.timeControlStatus == .playing
+        guard playing != lastIconShowsPause else { return }
+        lastIconShowsPause = playing
+        let name = playing ? "pause.fill" : "play.fill"
+        playPauseButton.image = NSImage(
+            systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: 22, weight: .semibold))
+        playPauseButton.contentTintColor = .white
+    }
+
+    private func syncSpeedMenu() {
+        for item in speedMenu.items {
+            let rate = item.representedObject as? Float ?? 1
+            item.state = abs(rate - desiredSpeed) < 0.001 ? .on : .off
+        }
+        speedButton?.attributedTitle = NSAttributedString(
+            string: speedLabel(),
+            attributes: [.font: NSFont.systemFont(ofSize: 21, weight: .semibold),
+                         .foregroundColor: NSColor.white])
+    }
+
+    private func applySpeed() {
+        if player.timeControlStatus == .playing { player.rate = desiredSpeed }
+        UserDefaults.standard.set(desiredSpeed, forKey: "viewerPlaybackSpeed")
+        syncSpeedMenu()
+    }
+
+    private func speedLabel() -> String {
+        desiredSpeed == desiredSpeed.rounded()
+            ? "\(Int(desiredSpeed))x" : "\(desiredSpeed)x"
+    }
+
+    private func buildSpeedMenu() {
+        let menu = NSMenu()
+        for (label, rate) in speedRates {
+            let item = NSMenuItem(title: label, action: #selector(speedChosen(_:)), keyEquivalent: "")
+            item.representedObject = rate
+            item.target = self
+            menu.addItem(item)
+        }
+        speedMenu = menu
+        syncSpeedMenu()
+    }
+
+    @objc private func seekBack5() { seek(by: -5) }
+    @objc private func seekForward5() { seek(by: 5) }
+    @objc private func playPauseClicked() { togglePlayPause() }
+
+    @objc private func showSpeedMenu() {
+        guard let speedButton else { return }
+        let current = speedMenu.items.first {
+            abs(($0.representedObject as? Float ?? 1) - desiredSpeed) < 0.001
+        }
+        speedMenu.popUp(
+            positioning: current,
+            at: NSPoint(x: speedButton.bounds.midX, y: speedButton.bounds.minY - 6),
+            in: speedButton
+        )
+    }
+
+    @objc private func speedChosen(_ sender: NSMenuItem) {
+        guard let rate = sender.representedObject as? Float else { return }
+        desiredSpeed = rate
+        applySpeed()
     }
 
     /// 截取当前帧存为 JPEG（保存到「下载」，文件名带时间戳）
